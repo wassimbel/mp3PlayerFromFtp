@@ -1,0 +1,115 @@
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <string>
+#include "FTPClient.h"
+#include "AudioPlayer.h"
+#include "UARTComm.h"
+
+/**
+ * Function to handle FTP tasks: list and download files from the FTP server.
+ * @param ftp - Reference to the FTPClient instance for performing FTP operations.
+ * @param files - Reference to a vector of strings to store the list of downloaded files.
+ */
+void ftpTask(FTPClient& ftp, std::vector<std::string>& files) {
+    try {
+        files = ftp.listFiles("/mp3"); // List files in the /mp3 directory
+        for (const auto& file : files) {
+            ftp.downloadFile("/mp3/" + file, "./" + file); // Download each file to the local directory
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "FTP error: " << e.what() << std::endl; // Handle FTP errors
+    }
+}
+
+/**
+ * Function to handle audio playback using VLC.
+ * @param player - Reference to the AudioPlayer instance for playing audio files.
+ * @param files - Const reference to a vector of strings containing the list of files to play.
+ */
+void playTask(AudioPlayer& player, const std::vector<std::string>& files) {
+    try {
+        player.play(files); // Play the list of audio files
+    } catch (const std::exception& e) {
+        std::cerr << "Playback error: " << e.what() << std::endl; // Handle playback errors
+    }
+}
+
+/**
+ * Function to handle UART communication: send the current playing file info.
+ * @param uart - Reference to the UARTComm instance for UART communication.
+ * @param files - Const reference to a vector of strings containing the list of files being played.
+ */
+void uartTask(UARTComm& uart, const std::vector<std::string>& files) {
+    try {
+        for (const auto& file : files) {
+            std::string message = "Playing: " + file; // Create message with current file name
+            uart.send(message); // Send message over UART
+            std::this_thread::sleep_for(std::chrono::seconds(1)); // Sleep for 1 second between messages
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "UART error: " << e.what() << std::endl; // Handle UART errors
+    }
+}
+
+int main() {
+    std::string server, user, password;
+
+    // Prompt user for FTP server details
+    std::cout << "Enter FTP server URL: ";
+    std::getline(std::cin, server);
+    
+    std::cout << "Enter FTP username: ";
+    std::getline(std::cin, user);
+
+    std::cout << "Enter FTP password: ";
+    std::getline(std::cin, password);
+
+    // Validate user input
+    if (server.empty() || user.empty() || password.empty()) {
+        std::cerr << "Invalid input. Exiting..." << std::endl;
+        return 1;
+    }
+
+    // Initialize FTP client, audio player, and UART communication
+    FTPClient ftp(server, user, password);
+    std::vector<std::string> files;
+    AudioPlayer player;
+    UARTComm uart("/dev/ttyS0", B9600);
+
+    // Start FTP task in a separate thread
+    std::thread ftp_thread(ftpTask, std::ref(ftp), std::ref(files));
+    ftp_thread.join(); // Wait for FTP task to complete
+
+    // Start audio playback and UART communication in separate threads
+    std::thread play_thread(playTask, std::ref(player), std::cref(files));
+    std::thread uart_thread(uartTask, std::ref(uart), std::cref(files));
+
+    play_thread.join(); // Wait for playback task to complete
+    uart_thread.join(); // Wait for UART task to complete
+
+    return 0;
+}
+
+
+    if (server.empty() || user.empty() || password.empty()) {
+        std::cerr << "Invalid input. Exiting..." << std::endl;
+        return 1;
+    }
+
+    FTPClient ftp(server, user, password);
+    std::vector<std::string> files;
+    AudioPlayer player;
+    UARTComm uart("/dev/ttyS0", B9600);
+
+    std::thread ftp_thread(ftpTask, std::ref(ftp), std::ref(files));
+    ftp_thread.join();
+
+    std::thread play_thread(playTask, std::ref(player), std::cref(files));
+    std::thread uart_thread(uartTask, std::ref(uart), std::cref(files));
+
+    play_thread.join();
+    uart_thread.join();
+
+    return 0;
+}

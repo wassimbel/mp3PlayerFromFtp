@@ -1,0 +1,35 @@
+#include <gtest/gtest.h>
+#include "FTPClient.h"
+
+/**
+ * Test fixture for FTPClient tests.
+ */
+class FTPClientTest : public ::testing::Test {
+protected:
+    FTPClient ftp{"ftp://example.com", "user", "password"}; // Initialize FTP client with test credentials
+
+    virtual void SetUp() {
+        // Code here will be called immediately after the constructor (right before each test).
+    }
+
+    virtual void TearDown() {
+        // Code here will be called immediately after each test (right before the destructor).
+    }
+};
+
+/**
+ * Test case for listing files from the FTP server.
+ */
+TEST_F(FTPClientTest, ListFiles) {
+    std::vector<std::string> files = ftp.listFiles("/mp3");
+    ASSERT_FALSE(files.empty()) << "File list should not be empty.";
+}
+
+/**
+ * Test case for downloading a file from the FTP server.
+ */
+TEST_F(FTPClientTest, DownloadFile) {
+    ftp.downloadFile("/mp3/test.mp3", "./test.mp3");
+    std::ifstream file("./test.mp3");
+    ASSERT_TRUE(file.good()) << "Downloaded file should exist.";
+}

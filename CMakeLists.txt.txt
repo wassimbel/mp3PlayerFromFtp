@@ -1,0 +1,26 @@
+
+### CMakeLists.txt
+
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(my_project)
+
+# Set the C++ standard
+set(CMAKE_CXX_STANDARD 11)
+
+# Include directories
+include_directories(src)
+
+# Add the main executable
+add_executable(my_project
+    src/main.cpp
+    src/FtpClient.cpp
+
+)
+
+# Add test target
+enable_testing()
+add_subdirectory(tests)
+add_executable(tests_run tests/test_main.cpp tests/test_FtpClient.cpp)
+target_link_libraries(tests_run gtest gtest_main pthread)
+add_test(NAME MyTests COMMAND tests_run)

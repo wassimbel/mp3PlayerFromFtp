@@ -1,0 +1,57 @@
+#ifndef FTPCLIENT_H
+#define FTPCLIENT_H
+
+#include <curl/curl.h>
+#include <string>
+#include <vector>
+
+/**
+ * Class to handle FTP client operations: listing and downloading files.
+ */
+class FTPClient {
+public:
+    /**
+     * Constructor to initialize FTP client with server details.
+     * @param server - The URL of the FTP server.
+     * @param user - The username for FTP login.
+     * @param password - The password for FTP login.
+     */
+    FTPClient(const std::string& server, const std::string& user, const std::string& password);
+
+    /**
+     * Method to list files in a specified directory on the FTP server.
+     * @param path - The path of the directory to list files from.
+     * @return A vector of strings containing the names of the files.
+     */
+    std::vector<std::string> listFiles(const std::string& path);
+
+    /**
+     * Method to download a file from the FTP server to the local path.
+     * @param remotePath - The path of the file on the FTP server.
+     * @param localPath - The local path where the file will be saved.
+     */
+    void downloadFile(const std::string& remotePath, const std::string& localPath);
+
+    /**
+     * Destructor to clean up resources.
+     */
+    ~FTPClient();
+
+private:
+    std::string server; // FTP server URL
+    std::string user; // FTP username
+    std::string password; // FTP password
+    CURL* curl; // cURL handle
+
+    /**
+     * Static callback function for cURL to write data.
+     * @param contents - Pointer to the data received.
+     * @param size - Size of a single data element.
+     * @param nmemb - Number of data elements.
+     * @param userp - Pointer to the user-defined data structure.
+     * @return Size of the data handled.
+     */
+    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp);
+};
+
+#endif // FTPCLIENT_H
